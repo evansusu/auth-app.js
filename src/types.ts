@@ -73,12 +73,14 @@ export type Authentication =
   | InstallationAccessTokenAuthentication
   | OAuthAccesTokenAuthentication;
 
-export type StrategyOptions = {
+type OAuthStrategyOptions = {
+  clientId?: string;
+  clientSecret?: string;
+};
+export type StrategyOptions = OAuthStrategyOptions & {
   id: number | string;
   privateKey: string;
   installationId?: number | string;
-  clientId?: string;
-  clientSecret?: string;
   request?: OctokitTypes.RequestInterface;
   cache?: Cache;
   timeDifference?: number;
@@ -88,11 +90,15 @@ export type StrategyOptions = {
   };
 };
 
-export type StrategyOptionsWithDefaults = StrategyOptions & {
-  id: number;
-  request: OctokitTypes.RequestInterface;
-  cache: Cache;
-};
+export type FactoryOptions = Required<
+  Omit<StrategyOptions, keyof OAuthStrategyOptions>
+> &
+  OAuthStrategyOptions;
+
+export type StrategyOptionsWithDefaults = StrategyOptions &
+  Required<
+    Omit<StrategyOptions, keyof OAuthStrategyOptions | "installationId">
+  >;
 
 export type Permissions = {
   [name: string]: string;
@@ -103,6 +109,9 @@ export type InstallationAuthOptions = {
   repositoryIds?: number[];
   permissions?: Permissions;
   refresh?: boolean;
+  // TODO: return type of `auth({ type: "installation", installationId, factory })`
+  //       should be Promise<ReturnType<factory>>
+  factory?: (options: StrategyOptionsWithDefaults) => unknown;
 };
 
 export type OAuthOptions = {
@@ -120,13 +129,4 @@ export type WithInstallationId = {
   installationId: number;
 };
 
-export type State = StrategyOptions & {
-  id: number;
-  installationId?: number;
-  request: OctokitTypes.RequestInterface;
-  cache: Cache;
-  log: {
-    warn: (message: string, additionalInfo?: object) => any;
-    [key: string]: any;
-  };
-};
+export type State = StrategyOptionsWithDefaults;
